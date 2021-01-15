@@ -1,5 +1,6 @@
 import spotipy
 import spotipy.util as util
+from spotipy.oauth2 import SpotifyClientCredentials
 
 from bs4 import BeautifulSoup
 
@@ -15,17 +16,61 @@ browser = webdriver.Firefox(options=options)
 from pytube import YouTube
 
 import os
-os.chdir('Music')
+#os.chdir('Music') line removed, because set_download_path function makes it redundent
 
 # all current songs in Music folder so we don't download duplicates
 songs = os.listdir()
 
-
-default_client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
-default_client_secret = 'd787a0f00e6849a6845384e9a467119b'
-
+client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
+client_secret = 'd787a0f00e6849a6845384e9a467119b'
+client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 scope = 'user-library-read'
 
+def set_download_path(name):
+    #change directory to the directory of the script
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
+    #get track data
+    result = sp1.search(name)
+    track = result['tracks']['items'][0]
+    #get artist data and display artist data
+    artist = sp1.artist(track["artists"][0]["external_urls"]["spotify"])
+    print("artist genres:", artist["genres"])
+    print("artist:", artist["name"])
+    #get album data and display album data
+    album = sp1.album(track["album"]["external_urls"]["spotify"])
+    print("album genres:", album["genres"])
+    print("album release-date:", album["release_date"])
+    print("album:", album["name"])
+
+    #assigning variables to replace special characters
+    album_name = album["name"]
+    artist_name = artist["name"]
+
+    #replace special characters to avoid error
+    if "?" in album_name:
+        album_name = album_name.replace('?', '')
+    if "!" in album_name:
+        album_name = album_name.replace('!', '')
+    if ":" in album_name:
+        album_name = album_name.replace(':', '')
+
+    if "?" in artist_name:
+        artist_name = artist_name.replace('?', '')
+    if "!" in artist_name:
+        artist_name = artist_name.replace('!', '')
+    if ":" in artist_name:
+        artist_name = artist_name.replace(':', '')
+
+    #check if directory for artist and album exists else create directory for them
+    does_dir_exist = os.path.exists(fr"Music\{artist_name}\{album_name}")
+    if does_dir_exist == True:
+        os.chdir(fr"Music\{artist_name}\{album_name}")
+    else:
+        os.makedirs(fr"Music\{artist_name}\{album_name}")
+        os.chdir(fr"Music\{artist_name}\{album_name}")
 
 # We have to turn this into two functions later
 # get_video_link(name) returns the link of the youtube video with that search result
@@ -53,13 +98,19 @@ def download_video(name):
             print('Finished')
 
 
+            try:
+                os.rename(name+'.mp4', name[:-4] + '.mp3')
+                
+            except:
+                print("couldn't rename")#fixed a typo
+                print(f'file: ' + name + '.mp4')
+                print('to: ' + name[:-4] + '.mp3')
         else:
             print('not found')
     else:
         print(f'{name} already downloaded')
 
-
-
+#Selection code. Will replace with GUI after main functionality completed
 print('(1) Song')
 print('(2) Album')
 print('(3) Sync Spotify account')
@@ -68,14 +119,31 @@ options = int(input('> '))
 
 if options == 1:
     name = input('Name of Song: ')
+    set_download_path(name)
     download_video(name)
+    browser.close()
 
 elif options == 2:
-    print('Under contruction')
+    # find album by name
+    album = input("Name of album:")
+    results = sp1.search(q="album:" + album, type="album")
+
+    # get the first album uri
+    album_id = results['albums']['items'][0]['uri']
+
+    # get album tracks
+    tracks = sp1.album_tracks(album_id)
+    for track in tracks['items']:
+        name = track['name']
+        set_download_path(name)
+        download_video(name)
+    browser.close()
+
 
 elif options == 3:
+
     print('Getting token for spotify api')
-    token = util.prompt_for_user_token('Johna', scope, client_id=default_client_id, client_secret=default_client_secret, redirect_uri='http://localhost:8080')
+    token = util.prompt_for_user_token('Johna', scope, client_id=client_id, client_secret=client_secret, redirect_uri='http://localhost:8080')
     print('Gottem')
 
     sp = spotipy.Spotify(auth=token)
@@ -85,7 +153,7 @@ elif options == 3:
     for item in results['items']:
         name = item['track']['name']
         print('Finding ' + name)
+        set_download_path(name) #added sorting function to loop
         download_video(name)
-        make_mp4()
 
     browser.close()
