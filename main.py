@@ -1,15 +1,13 @@
+#Spotify api
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+#used to get the first youtube video link from search result
 from bs4 import BeautifulSoup
 
+#youtube's html is mostly rendered throught javascript so I cant use a simple get request i have to render it with selenium
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-
-#checks for system OS because directories differ
-from platform import system
-print(f'You are running the {system()} Operating System bro')
-
 
 # This opens a window in the background(headless) so it's faster and doesn't bother the user
 options = Options()
@@ -20,62 +18,42 @@ browser = webdriver.Firefox(options=options)
 from pytube import YouTube
 
 import os
-#Your mom is redundent
+import re # for punctuation filtering
+
+import threading
 
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 
+song_names = []
+links = []
 
+os.chdir('Music')
+home_path = os.getcwd()
 
-def set_download_path(name):
-    #change directory to the directory of the script
-    abspath = os.path.abspath(__file__)
-    print('abspath', abspath)  
-    dname = os.path.dirname(abspath)
-    print('dname', dname)
-    os.chdir(dname)
-    #get track data
+def get_song_info(name):
     result = sp1.search(name)
     track = result['tracks']['items'][0]
+
     #get artist data and display artist data
     artist = sp1.artist(track["artists"][0]["external_urls"]["spotify"])
-    print("artist genres:", artist["genres"])
-    print("artist:", artist["name"])
+
     #get album data and display album data
     album = sp1.album(track["album"]["external_urls"]["spotify"])
-    print("album genres:", album["genres"])
-    print("album release-date:", album["release_date"])
-    print("album:", album["name"])
 
     #assigning variables to replace special characters
     album_name = album["name"]
     artist_name = artist["name"]
 
-    #no need for if statements because python won't return error if theres nothing to replace
-    #I know theres a more efficient way to remove punctuation, I'll do it later
-    album_name = album_name.replace('?', '')
-    album_name = album_name.replace('!', '')
-    album_name = album_name.replace(':', '')
+    album_name = re.sub(r'[^\w\s]', '', album_name) #removes all punctuation
+    artist_name = re.sub(r'[^\w\s]', '', artist_name)
 
-    artist_name = artist_name.replace('?', '')
-    artist_name = artist_name.replace('!', '')
-    artist_name = artist_name.replace(':', '')
+    return artist_name, album_name
 
-    #check if directory for artist and album exists else create directory for them
-    if system == 'Windows':
-        does_dir_exist = os.path.exists(fr"Music\{artist_name}\{album_name}")
-        if not does_dir_exist:
-            os.makedirs(fr"Music\{artist_name}\{album_name}")
-        os.chdir(fr"Music\{artist_name}\{album_name}")
-    else:
-        does_dir_exist = os.path.exists(f"Music/{artist_name}/{album_name}")
-        if not does_dir_exist:
-            os.makedirs(f"Music/{artist_name}/{album_name}")
-        os.chdir(f"Music/{artist_name}/{album_name}")
+def append_video_link(name):
 
-def get_video_link(name):
     link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
     browser.get(link)
@@ -83,45 +61,36 @@ def get_video_link(name):
     soup = BeautifulSoup(browser.page_source, features="lxml")
 
     first_video_link = soup.find(id='video-title')
-    if first_video_link:
-        return 'https://www.youtube.com'+first_video_link['href']
-    else:
-        return None
+
+    links.append('https://www.youtube.com'+first_video_link['href'])
+
 
 def download_video_link(link):
-    if link:
-        yt = YouTube(link)
-        filtered = yt.streams.filter(only_audio=True)
+    yt = YouTube(link)
+    filtered = yt.streams.filter(only_audio=True)
 
-        stream = filtered[0]
-        print('Starting Download')
-        stream.download()
-        os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
-        print('Finished')
-    else:
-        print('No Video Found')
+    stream = filtered[0]
+    print('Starting Download')
+    stream.download()
+    os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
+    print('Finished')
+
 
 
 #Selection code. Will replace with GUI after main functionality completed
-print('(1) Song (One)')
-print('(2) Songs (Several)')
-print('(3) Album')
+print('(1) Song Names')
+print('(2) Album')
 
 options = int(input('> '))
 
 if options == 1:
-    name = input('Name of Song: ')
-    set_download_path(name)
-    video_link = get_video_link(name)
-    download_video_link(video_link)
-    browser.close()
+    while 'q' not in song_names:
+        song_names.append(input('q to finish> '))
+    song_names.remove('q')
 
 elif options == 2:
-    print('Under construction')
-
-elif options == 3:
     # find album by name
-    album = input("Name of album:")
+    album = input("Name of album: ")
     results = sp1.search(q="album:" + album, type="album")
 
     # get the first album uri
@@ -131,10 +100,23 @@ elif options == 3:
     tracks = sp1.album_tracks(album_id)
     for track in tracks['items']:
         name = track['name']
-        set_download_path(name)
-        video_link = get_video_link(name)
-        download_video_link(video_link)
-    browser.close()
+        song_names.append(name)
 
 else:
-    print('We didn\t understand')
+    print('We didn\t understand, try again')
+
+threads = []
+
+#os.path.normpath()
+#os.path.join()
+
+for name in song_names:
+    thread = threading.Thread(target=append_video_link, args=(name,))
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
+
+for link in links:
+    download_video_link(link)
