@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
+# This opens a window in the background(headless) so it's faster and doesn't bother the user
 options = Options()
 options.headless = True
 
@@ -15,7 +16,10 @@ browser = webdriver.Firefox(options=options)
 from pytube import YouTube
 
 import os
-#os.chdir('Music') line removed, because set_download_path function makes it redundant
+#os.chdir('Music') line removed, because set_download_path function makes it redundent
+
+# all current songs in Music folder so we don't download duplicates
+songs = os.listdir()
 
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
@@ -68,25 +72,31 @@ def set_download_path(name):
         os.makedirs(fr"Music\{artist_name}\{album_name}")
         os.chdir(fr"Music\{artist_name}\{album_name}")
 
-
+# We have to turn this into two functions later
+# get_video_link(name) returns the link of the youtube video with that search result
+# download_video(link, location) downloads the youtube video link at a certain location
+# the reason there should be two functions is because it takes the longest to actually get the link so we can use multiprocessing to improve efficiency
 def download_video(name):
-    link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
+    if name+'.mp3' not in songs:
+        link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
-    name = name.replace(' ', '_')
+        browser.get(link)
 
-    browser.get(link)
+        soup = BeautifulSoup(browser.page_source, features="lxml")
 
-    soup = BeautifulSoup(browser.page_source, features="lxml")
+        first_video_link = soup.find(id='video-title')
+        if first_video_link:
+            youtube_link = 'https://www.youtube.com'+first_video_link['href']
+            print(youtube_link)
+            yt = YouTube(youtube_link)
+            filtered = yt.streams.filter(only_audio=True)
 
-    first_video_link = soup.find(id='video-title')
-    if first_video_link:
-        youtube_link = 'https://www.youtube.com'+first_video_link['href']
-        yt = YouTube(youtube_link)
-        filtered = yt.streams.filter(only_audio=True)
-
-        if filtered:
+            stream = filtered[0]
             print('Starting Download')
-            filtered[0].download(filename=name)
+            stream.download()
+            os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
+            print('Finished')
+
 
             try:
                 os.rename(name+'.mp4', name[:-4] + '.mp3')
@@ -95,14 +105,10 @@ def download_video(name):
                 print("couldn't rename")#fixed a typo
                 print(f'file: ' + name + '.mp4')
                 print('to: ' + name[:-4] + '.mp3')
-
-            print('Finished')
-            
         else:
-            print('Nothing found')
-
+            print('not found')
     else:
-        print('not found')
+        print(f'{name} already downloaded')
 
 #Selection code. Will replace with GUI after main functionality completed
 print('(1) Song')
@@ -135,10 +141,13 @@ elif options == 2:
 
 
 elif options == 3:
+
+    print('Getting token for spotify api')
     token = util.prompt_for_user_token('Johna', scope, client_id=client_id, client_secret=client_secret, redirect_uri='http://localhost:8080')
+    print('Gottem')
 
     sp = spotipy.Spotify(auth=token)
-    
+    print('Getting user saved tracks')
     results = sp.current_user_saved_tracks()
 
     for item in results['items']:
@@ -146,8 +155,5 @@ elif options == 3:
         print('Finding ' + name)
         set_download_path(name) #added sorting function to loop
         download_video(name)
+
     browser.close()
-
-
-
-
