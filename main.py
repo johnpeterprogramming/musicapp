@@ -24,6 +24,10 @@ sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #sp
 scope = 'user-library-read'
 
 def set_download_path(name):
+    #change directory to the directory of the script
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
     #get track data
     result = sp1.search(name)
     track = result['tracks']['items'][0]
@@ -37,13 +41,32 @@ def set_download_path(name):
     print("album release-date:", album["release_date"])
     print("album:", album["name"])
 
+    #assigning variables to replace special characters
+    album_name = album["name"]
+    artist_name = artist["name"]
+
+    #replace special characters to avoid error
+    if "?" in album_name:
+        album_name = album_name.replace('?', '')
+    if "!" in album_name:
+        album_name = album_name.replace('!', '')
+    if ":" in album_name:
+        album_name = album_name.replace(':', '')
+
+    if "?" in artist_name:
+        artist_name = artist_name.replace('?', '')
+    if "!" in artist_name:
+        artist_name = artist_name.replace('!', '')
+    if ":" in artist_name:
+        artist_name = artist_name.replace(':', '')
+
     #check if directory for artist and album exists else create directory for them
-    does_dir_exist = os.path.exists(fr"Music\{artist['name']}\{album['name']}")
+    does_dir_exist = os.path.exists(fr"Music\{artist_name}\{album_name}")
     if does_dir_exist == True:
-        os.chdir(fr"Music\{artist['name']}\{album['name']}")
+        os.chdir(fr"Music\{artist_name}\{album_name}")
     else:
-        os.makedirs(fr"Music\{artist['name']}\{album['name']}")
-        os.chdir(fr"Music\{artist['name']}\{album['name']}")
+        os.makedirs(fr"Music\{artist_name}\{album_name}")
+        os.chdir(fr"Music\{artist_name}\{album_name}")
 
 
 def download_video(name):
@@ -69,7 +92,7 @@ def download_video(name):
                 os.rename(name+'.mp4', name[:-4] + '.mp3')
                 
             except:
-                print("could't rename")
+                print("couldn't rename")#fixed a typo
                 print(f'file: ' + name + '.mp4')
                 print('to: ' + name[:-4] + '.mp3')
 
@@ -92,6 +115,7 @@ if options == 1:
     name = input('Name of Song: ')
     set_download_path(name)
     download_video(name)
+    browser.close()
 
 elif options == 2:
     # find album by name
@@ -107,6 +131,7 @@ elif options == 2:
         name = track['name']
         set_download_path(name)
         download_video(name)
+    browser.close()
 
 
 elif options == 3:
