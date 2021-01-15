@@ -1,11 +1,15 @@
 import spotipy
-import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
 
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+
+#checks for system OS because directories differ
+from platform import system
+print(f'You are running the {system()} Operating System bro')
+
 
 # This opens a window in the background(headless) so it's faster and doesn't bother the user
 options = Options()
@@ -16,21 +20,21 @@ browser = webdriver.Firefox(options=options)
 from pytube import YouTube
 
 import os
-#os.chdir('Music') line removed, because set_download_path function makes it redundent
-
-# all current songs in Music folder so we don't download duplicates
-songs = os.listdir()
+#Your mom is redundent
 
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
-scope = 'user-library-read'
+
+
 
 def set_download_path(name):
     #change directory to the directory of the script
     abspath = os.path.abspath(__file__)
+    print('abspath', abspath)  
     dname = os.path.dirname(abspath)
+    print('dname', dname)
     os.chdir(dname)
     #get track data
     result = sp1.search(name)
@@ -49,35 +53,35 @@ def set_download_path(name):
     album_name = album["name"]
     artist_name = artist["name"]
 
-    #replace special characters to avoid error
-    if "?" in album_name:
-        album_name = album_name.replace('?', '')
-    if "!" in album_name:
-        album_name = album_name.replace('!', '')
-    if ":" in album_name:
-        album_name = album_name.replace(':', '')
+    #no need for if statements because python won't return error if theres nothing to replace
+    #I know theres a more efficient way to remove punctuation, I'll do it later
+    album_name = album_name.replace('?', '')
+    album_name = album_name.replace('!', '')
+    album_name = album_name.replace(':', '')
 
-    if "?" in artist_name:
-        artist_name = artist_name.replace('?', '')
-    if "!" in artist_name:
-        artist_name = artist_name.replace('!', '')
-    if ":" in artist_name:
-        artist_name = artist_name.replace(':', '')
+    artist_name = artist_name.replace('?', '')
+    artist_name = artist_name.replace('!', '')
+    artist_name = artist_name.replace(':', '')
 
     #check if directory for artist and album exists else create directory for them
-    does_dir_exist = os.path.exists(fr"Music\{artist_name}\{album_name}")
-    if does_dir_exist == True:
+    if system == 'Windows':
+        does_dir_exist = os.path.exists(fr"Music\{artist_name}\{album_name}")
+        if not does_dir_exist:
+            os.makedirs(fr"Music\{artist_name}\{album_name}")
         os.chdir(fr"Music\{artist_name}\{album_name}")
     else:
-        os.makedirs(fr"Music\{artist_name}\{album_name}")
-        os.chdir(fr"Music\{artist_name}\{album_name}")
+        does_dir_exist = os.path.exists(f"Music/{artist_name}/{album_name}")
+        if not does_dir_exist:
+            os.makedirs(f"Music/{artist_name}/{album_name}")
+        os.chdir(f"Music/{artist_name}/{album_name}")
+
 
 # We have to turn this into two functions later
 # get_video_link(name) returns the link of the youtube video with that search result
 # download_video(link, location) downloads the youtube video link at a certain location
 # the reason there should be two functions is because it takes the longest to actually get the link so we can use multiprocessing to improve efficiency
 def download_video(name):
-    if name+'.mp3' not in songs:
+    if name+'.mp3' not in os.listdir():
         link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
         browser.get(link)
@@ -99,12 +103,13 @@ def download_video(name):
 
 
             try:
-                os.rename(name+'.mp4', name[:-4] + '.mp3')
+                os.rename(name+'.mp4', name + '.mp3')
                 
             except:
                 print("couldn't rename")#fixed a typo
+                #I'm really offended (anger)
                 print(f'file: ' + name + '.mp4')
-                print('to: ' + name[:-4] + '.mp3')
+                print('to: ' + name + '.mp3')
         else:
             print('not found')
     else:
@@ -139,11 +144,10 @@ elif options == 2:
         download_video(name)
     browser.close()
 
-
+'''
 elif options == 3:
 
     print('Getting token for spotify api')
-    token = util.prompt_for_user_token('Johna', scope, client_id=client_id, client_secret=client_secret, redirect_uri='http://localhost:8080')
     print('Gottem')
 
     sp = spotipy.Spotify(auth=token)
@@ -155,5 +159,4 @@ elif options == 3:
         print('Finding ' + name)
         set_download_path(name) #added sorting function to loop
         download_video(name)
-
-    browser.close()
+'''
