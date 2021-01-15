@@ -75,60 +75,51 @@ def set_download_path(name):
             os.makedirs(f"Music/{artist_name}/{album_name}")
         os.chdir(f"Music/{artist_name}/{album_name}")
 
+def get_video_link(name):
+    link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
-# We have to turn this into two functions later
-# get_video_link(name) returns the link of the youtube video with that search result
-# download_video(link, location) downloads the youtube video link at a certain location
-# the reason there should be two functions is because it takes the longest to actually get the link so we can use multiprocessing to improve efficiency
-def download_video(name):
-    if name+'.mp3' not in os.listdir():
-        link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
+    browser.get(link)
 
-        browser.get(link)
+    soup = BeautifulSoup(browser.page_source, features="lxml")
 
-        soup = BeautifulSoup(browser.page_source, features="lxml")
-
-        first_video_link = soup.find(id='video-title')
-        if first_video_link:
-            youtube_link = 'https://www.youtube.com'+first_video_link['href']
-            print(youtube_link)
-            yt = YouTube(youtube_link)
-            filtered = yt.streams.filter(only_audio=True)
-
-            stream = filtered[0]
-            print('Starting Download')
-            stream.download()
-            os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
-            print('Finished')
-
-
-            try:
-                os.rename(name+'.mp4', name + '.mp3')
-                
-            except:
-                print("couldn't rename")#fixed a typo
-                #I'm really offended (anger)
-                print(f'file: ' + name + '.mp4')
-                print('to: ' + name + '.mp3')
-        else:
-            print('not found')
+    first_video_link = soup.find(id='video-title')
+    if first_video_link:
+        return 'https://www.youtube.com'+first_video_link['href']
     else:
-        print(f'{name} already downloaded')
+        return None
+
+def download_video_link(link):
+    if link:
+        yt = YouTube(link)
+        filtered = yt.streams.filter(only_audio=True)
+
+        stream = filtered[0]
+        print('Starting Download')
+        stream.download()
+        os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
+        print('Finished')
+    else:
+        print('No Video Found')
+
 
 #Selection code. Will replace with GUI after main functionality completed
-print('(1) Song')
-print('(2) Album')
-print('(3) Sync Spotify account')
+print('(1) Song (One)')
+print('(2) Songs (Several)')
+print('(3) Album')
 
 options = int(input('> '))
 
 if options == 1:
     name = input('Name of Song: ')
     set_download_path(name)
-    download_video(name)
+    video_link = get_video_link(name)
+    download_video_link(video_link)
     browser.close()
 
 elif options == 2:
+    print('Under construction')
+
+elif options == 3:
     # find album by name
     album = input("Name of album:")
     results = sp1.search(q="album:" + album, type="album")
@@ -141,22 +132,9 @@ elif options == 2:
     for track in tracks['items']:
         name = track['name']
         set_download_path(name)
-        download_video(name)
+        video_link = get_video_link(name)
+        download_video_link(video_link)
     browser.close()
 
-'''
-elif options == 3:
-
-    print('Getting token for spotify api')
-    print('Gottem')
-
-    sp = spotipy.Spotify(auth=token)
-    print('Getting user saved tracks')
-    results = sp.current_user_saved_tracks()
-
-    for item in results['items']:
-        name = item['track']['name']
-        print('Finding ' + name)
-        set_download_path(name) #added sorting function to loop
-        download_video(name)
-'''
+else:
+    print('We didn\t understand')
