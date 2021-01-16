@@ -2,7 +2,8 @@
 Uses youtube to download songs and organise them
 
 Pip install all dependancies:
-`pip install spotipy pytube3 selenium bs4 lxml`
+`pip install spotipy selenium bs4 lxml mp3_tagger`
+`python3 -m pip install git+https://github.com/pytube/pytube`
 
 Dependacy list:
 Pytube
