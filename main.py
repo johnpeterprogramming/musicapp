@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
     end = time.perf_counter()
 
-    print(f'Done, this took {time} seconds')
+    print(f'Done, this took {end-start} seconds')
     '''
     for song_name in song_names:
         html = get_video_html(song_name)
