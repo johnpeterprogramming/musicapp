@@ -131,7 +131,6 @@ options = int(input('> '))
 
 if options == 1:
     name = input('Name of Song: ')
-    song_name = name
     data = set_download_path(name)
     video_link = get_video_link(name)
     download_video_link(video_link,name)
@@ -156,9 +155,13 @@ elif options == 3:
     tracks = sp1.album_tracks(album_id)
     for track in tracks['items']:
         name = track['name']
-        set_download_path(name)
+        data = set_download_path(name)
         video_link = get_video_link(name)
         download_video_link(video_link,name)
+        if system == 'Windows':
+            tag_mp3(os.getcwd() + '\\' + name + '.mp3', data.album, data.artist, data.song)
+        else:
+            tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song)
     browser.close()
 
 else:
