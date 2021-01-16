@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
+from mp3_tagger import MP3File
+from mp3_tagger import VERSION_BOTH
+
 #checks for system OS because directories differ
 from platform import system
 print(f'You are running the {system()} Operating System bro')
@@ -27,7 +30,18 @@ client_secret = 'd787a0f00e6849a6845384e9a467119b'
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 
-
+def tag_mp3(path_to_mp3,album,artist,song):
+    #Open the file
+    mp3 = MP3File(path_to_mp3)
+    #Set tags
+    mp3.album = album
+    mp3.artist = artist
+    mp3.song = song
+    #Save and close the file
+    mp3.save()
+    #View tags
+    tags = mp3.get_tags()
+    print(tags)
 
 def set_download_path(name):
     #change directory to the directory of the script
@@ -74,6 +88,13 @@ def set_download_path(name):
         if not does_dir_exist:
             os.makedirs(f"Music/{artist_name}/{album_name}")
         os.chdir(f"Music/{artist_name}/{album_name}")
+    class metadata:
+        def __init__(self):
+            metadata.artist = artist_name
+            metadata.album = album_name
+            metadata.song = name
+
+    return metadata()
 
 def get_video_link(name):
     link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
@@ -88,7 +109,7 @@ def get_video_link(name):
     else:
         return None
 
-def download_video_link(link):
+def download_video_link(link,name):
     if link:
         yt = YouTube(link)
         filtered = yt.streams.filter(only_audio=True)
@@ -96,11 +117,10 @@ def download_video_link(link):
         stream = filtered[0]
         print('Starting Download')
         stream.download()
-        os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
+        os.rename(stream.default_filename, f'{name}.mp3')
         print('Finished')
     else:
         print('No Video Found')
-
 
 #Selection code. Will replace with GUI after main functionality completed
 print('(1) Song (One)')
@@ -111,9 +131,14 @@ options = int(input('> '))
 
 if options == 1:
     name = input('Name of Song: ')
-    set_download_path(name)
+    song_name = name
+    data = set_download_path(name)
     video_link = get_video_link(name)
-    download_video_link(video_link)
+    download_video_link(video_link,name)
+    if system == 'Windows':
+        tag_mp3(os.getcwd() + '\\' + name + '.mp3',data.album,data.artist,data.song)
+    else:
+        tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song)
     browser.close()
 
 elif options == 2:
@@ -133,8 +158,8 @@ elif options == 3:
         name = track['name']
         set_download_path(name)
         video_link = get_video_link(name)
-        download_video_link(video_link)
+        download_video_link(video_link,name)
     browser.close()
 
 else:
-    print('We didn\t understand')
+    print("We didn't understand")
