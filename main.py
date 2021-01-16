@@ -3,17 +3,9 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 #used to get the first youtube video link from search result
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 
-#youtube's html is mostly rendered throught javascript so I cant use a simple get request i have to render it with selenium
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-
-# This opens a window in the background(headless) so it's faster and doesn't bother the user
-options = Options()
-options.headless = True
-
-browser = webdriver.Firefox(options=options)
+import time
 
 from pytube import YouTube
 
@@ -21,6 +13,17 @@ import os
 import re # for punctuation filtering
 
 import threading
+
+#youtube's html is mostly rendered throught javascript so I cant use a simple get request i have to render it with selenium
+from selenium import webdriver
+
+#so i can enable headless
+from selenium.webdriver.firefox.options import Options
+
+options = Options()
+options.headless = True
+
+browser = webdriver.Firefox(options=options)
 
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
@@ -53,6 +56,7 @@ def get_song_info(name):
     return artist_name, album_name
 
 def append_video_link(name):
+    print(f'Getting link for {name}')
 
     link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
@@ -62,11 +66,12 @@ def append_video_link(name):
 
     first_video_link = soup.find(id='video-title')
 
-    links.append('https://www.youtube.com'+first_video_link['href'])
+    links.append('https://www.youtube.com' + first_video_link['href'])
 
 
 def download_video_link(link):
     yt = YouTube(link)
+
     filtered = yt.streams.filter(only_audio=True)
 
     stream = filtered[0]
@@ -77,7 +82,6 @@ def download_video_link(link):
 
 
 
-#Selection code. Will replace with GUI after main functionality completed
 print('(1) Song Names')
 print('(2) Album')
 
@@ -109,14 +113,23 @@ threads = []
 
 #os.path.normpath()
 #os.path.join()
+if __name__ == '__main__':
 
-for name in song_names:
-    thread = threading.Thread(target=append_video_link, args=(name,))
-    threads.append(thread)
-    thread.start()
+    start = time.perf_counter()
 
-for thread in threads:
-    thread.join()
+    for song_name in song_names:
+        append_video_link(song_name)
 
-for link in links:
-    download_video_link(link)
+    for link in links:
+        download_video_link(link)
+
+    end = time.perf_counter()
+
+    print(f'Done, this took {time} seconds')
+    '''
+    for song_name in song_names:
+        html = get_video_html(song_name)
+        thread = threading.Thread(target=download_video_link, args=(html,))
+        thread.start()
+    '''
+
