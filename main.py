@@ -7,7 +7,8 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
 from mp3_tagger import MP3File
-from mp3_tagger import VERSION_BOTH
+from mp3_tagger import VERSION_2
+from mp3_tagger import VERSION_1
 
 #checks for system OS because directories differ
 from platform import system
@@ -30,13 +31,15 @@ client_secret = 'd787a0f00e6849a6845384e9a467119b'
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 
-def tag_mp3(path_to_mp3,album,artist,song):
+def tag_mp3(path_to_mp3,album,artist,song,release):
     #Open the file
     mp3 = MP3File(path_to_mp3)
+    mp3.set_version(VERSION_1)
     #Set tags
     mp3.album = album
     mp3.artist = artist
     mp3.song = song
+    mp3.year = release[:4]
     #Save and close the file
     mp3.save()
     #View tags
@@ -66,6 +69,7 @@ def set_download_path(name):
     #assigning variables to replace special characters
     album_name = album["name"]
     artist_name = artist["name"]
+    album_release = album["release_date"]
 
     #no need for if statements because python won't return error if theres nothing to replace
     #I know theres a more efficient way to remove punctuation, I'll do it later
@@ -93,6 +97,7 @@ def set_download_path(name):
             metadata.artist = artist_name
             metadata.album = album_name
             metadata.song = name
+            metadata.release = album_release
 
     return metadata()
 
@@ -135,9 +140,9 @@ if options == 1:
     video_link = get_video_link(name)
     download_video_link(video_link,name)
     if system == 'Windows':
-        tag_mp3(os.getcwd() + '\\' + name + '.mp3',data.album,data.artist,data.song)
+        tag_mp3(os.getcwd() + '\\' + name + '.mp3',data.album,data.artist,data.song,data.release)
     else:
-        tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song)
+        tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song,data.release)
     browser.close()
 
 elif options == 2:
@@ -159,9 +164,9 @@ elif options == 3:
         video_link = get_video_link(name)
         download_video_link(video_link,name)
         if system == 'Windows':
-            tag_mp3(os.getcwd() + '\\' + name + '.mp3', data.album, data.artist, data.song)
+            tag_mp3(os.getcwd() + '\\' + name + '.mp3', data.album, data.artist, data.song,data.release)
         else:
-            tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song)
+            tag_mp3(os.getcwd() + '/' + name + '.mp3', data.album, data.artist, data.song,data.release)
     browser.close()
 
 else:

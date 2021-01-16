@@ -10,3 +10,4 @@ Spotify API
 Selenium (Google how to install the drivers)
 BeautifulSoup
 Lxml
+mp3-tagger
