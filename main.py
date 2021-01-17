@@ -73,7 +73,7 @@ def get_song_info(name):
     return file_path, artist_name, album_name, song_name, release_date
 
 
-def download_video_link(link, location, artist_name, album_name, song_namem, release_date):
+def download_video_link(link, location, artist_name, album_name, song_name, release_date):
     yt = YouTube(link)
 
     filtered = yt.streams.filter(only_audio=True)
@@ -91,12 +91,10 @@ def download_video_link(link, location, artist_name, album_name, song_namem, rel
     mp3.song = song_name
     mp3.year = release_date
 
-    print(mp3.get_tags())
-
     mp3.set_version(VERSION_1)
     mp3.save()
 
-    print('Metadata added')
+    print(f'Metadata for {song_name} added')
 
 
 print('(1) Song Names')

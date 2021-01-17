@@ -1,5 +1,6 @@
 #Music folder, we don't want to upload music to repo
 Music/*
+geckodriver.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
