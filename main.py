@@ -12,7 +12,7 @@ from pytube import YouTube
 import os
 import re # for punctuation filtering
 
-import threading
+from mp3_tagger import MP3File, VERSION_1
 
 #youtube's html is mostly rendered throught javascript so I cant use a simple get request i have to render it with selenium
 from selenium import webdriver
@@ -82,7 +82,21 @@ def download_video_link(link, location, artist_name, album_name, song_namem, rel
     print('Starting Download')
     stream.download(location, filename=song_name)
     os.rename(os.path.join(location, song_name+'.mp4'), os.path.join(location, song_name+'.mp3'))
-    print('Finished')
+    print('Finished Download, adding metadata')
+
+    mp3 = MP3File(os.path.join(location, song_name+'.mp3'))
+
+    mp3.album = album_name
+    mp3.artist = artist_name
+    mp3.song = song_name
+    mp3.year = release_date
+
+    print(mp3.get_tags())
+
+    mp3.set_version(VERSION_1)
+    mp3.save()
+
+    print('Metadata added')
 
 
 print('(1) Song Names')
