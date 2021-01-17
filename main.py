@@ -53,19 +53,14 @@ def get_song_info(name):
     result = sp1.search(name)
     track = result['tracks']['items'][0]
 
-    #get artist data and display artist data
-    artist = sp1.artist(track["artists"][0]["external_urls"]["spotify"])
-
-    #get album data and display album data
-    album = sp1.album(track["album"]["external_urls"]["spotify"])
-
     #assigning variables to replace special characters
-    album_name = album["name"]
-    album_genres = album['genres']
+    album_name = track['album']["name"]
 
-    artist_name = artist["name"]
+    artist_name = track['album']['artists'][0]['name']
     song_name = track['name']
     release_date = track['album']['release_date']
+    release_date = release_date[:4] # only year
+
 
     album_name = re.sub(r'[^\w\s]', '', album_name) #removes all punctuation
     artist_name = re.sub(r'[^\w\s]', '', artist_name)
@@ -74,22 +69,20 @@ def get_song_info(name):
 
     if not os.path.exists(file_path):
         os.makedirs(file_path)
-    location = file_path
 
-    return location, artist_name, album_name, song_name, release_date, album_genres
+    return file_path, artist_name, album_name, song_name, release_date
 
 
-def download_video_link(link):
+def download_video_link(link, location, artist_name, album_name, song_namem, release_date):
     yt = YouTube(link)
 
     filtered = yt.streams.filter(only_audio=True)
 
     stream = filtered[0]
     print('Starting Download')
-    stream.download()
-    os.rename(stream.default_filename, stream.default_filename.replace('.mp4', '.mp3'))
+    stream.download(location, filename=song_name)
+    os.rename(os.path.join(location, song_name+'.mp4'), os.path.join(location, song_name+'.mp3'))
     print('Finished')
-
 
 
 print('(1) Song Names')
@@ -133,9 +126,9 @@ if __name__ == '__main__':
     
     browser.close()
 
-    for link, song_name in zipped(links, song_names):
-        location, artist_name, album, song, year, genre = get_song_info(song_name)
-        download_video_link(link, location, artist_name, album, song, year, genre)
+    for link, song_name in zip(links, song_names):
+        file_path, artist_name, album, song, year = get_song_info(song_name)
+        download_video_link(link, file_path, artist_name, album, song, year)
 
     end = time.perf_counter()
 
