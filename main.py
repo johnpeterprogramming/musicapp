@@ -56,7 +56,7 @@ def append_video_link(name):
     status_text.insert('1.0', f'Getting link for {name}\n')
 
     try:
-        link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
+        link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]
 
         browser.get(link)
 
@@ -110,7 +110,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.insert('1.0', f'{song_name} Downloaded\n')
+    status_text.config(text=f'Metadata for {song_name} added')
 
 def add_song(event):
     inp_song = inpBox.get()
