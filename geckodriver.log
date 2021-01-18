@@ -613,8 +613,9 @@ console.error: Region.jsm: "Failed to fetch region" (new Error("TIMEOUT", "resou
 1610976869337	Marionette	INFO	Listening on port 62667
 1610976870021	Marionette	WARN	TLS certificate errors will be ignored for this session
 JavaScript error: , line 0: NS_ERROR_NOT_AVAILABLE
-1:62769
-1610976979632	mozrunner::runner	INFO	Running command: "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-foreground" "-no-remote" "-profile" "C:\\Users\\Carwyn\\AppData\\Local\\Temp\\rust_mozprofileDNuQs4"
+console.error: Region.jsm: "Error fetching region" (new Error("TIMEOUT", "resource://gre/modules/Region.jsm", 726))
+console.error: Region.jsm: "Failed to fetch region" (new Error("TIMEOUT", "resource://gre/modules/Region.jsm", 376))
+ofileDNuQs4"
 *** You are running in headless mode.
 console.warn: SearchSettings: "get: No settings file exists, new profile?" (new Error("", "(unknown module)"))
 1610977010291	Marionette	INFO	Listening on port 62777
