@@ -2,9 +2,11 @@
 Uses youtube to download songs and organise them
 
 Pip install all dependancies:
-`pip install spotipy selenium bs4 lxml pydub`
+`pip3 install spotipy selenium bs4 lxml pydub`
 Install latest version of pytube from github:
 `python3 -m pip install git+https://github.com/pytube/pytube`
+If you don't have Tkinter(Linux):
+`sudo apt install tk`
 
 Dependacy list:
 Pytube
