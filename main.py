@@ -21,15 +21,19 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
 import tkinter
+from tkinter import ttk
 
 window = tkinter.Tk()
-window.geometry("500x400")
+
+window.geometry("600x600")
+
 window.title("Music Downloader")
 
 caption = tkinter.Label(window, text="Add songs or album to be downloaded", font=("Arial Bold", 16))
 caption.grid(column=0, row=0)
 
-status_text = tkinter.Label(window, font=("Arial", 10))
+status_text = tkinter.Text(window, font=("Arial", 10))
+
 status_text.grid(column=0, row=5)
 
 inpBox = tkinter.Entry(window,width=30)
@@ -54,7 +58,8 @@ if not os.path.exists('Music'):
 os.chdir('Music')
 
 def append_video_link(name):
-    status_text.config(text=f'Getting link for {name}')
+    status_text.insert('1.0', f'Getting link for {name}\n')
+
 
     try:
         link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]
@@ -84,7 +89,7 @@ def get_song_info(name):
 
     album_name = re.sub(r'[^\w\s]', '', album_name) #removes all punctuation
     artist_name = re.sub(r'[^\w\s]', '', artist_name)
-    
+
     file_path = os.path.join(artist_name, album_name)
 
     if not os.path.exists(file_path):
@@ -99,25 +104,27 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
     filtered = yt.streams.filter(only_audio=True)
 
     stream = filtered[0]
-    status_text.config(text='Starting Download')
-    stream.download(location)
 
-    status_text.config(text='Finished Download, adding metadata')
+    print('Starting Download')
+    stream.download(location)
+    print('Finished Download, adding metadata')
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
 
-
-    audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
+    audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'albumartist':artist_name,'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.config(text=f'Metadata for {song_name} added')
+    status_text.insert('1.0', f'{song_name} downloaded\n')
 
-def add_song():
+def add_song(event):
     inp_song = inpBox.get()
     inpBox.delete(0, 'end')
     song_names.append(inp_song)
-    status_text.config(text=str(song_names))
+    status_text.delete('1.0', '100.100')
+    status_text.insert('1.0', str(song_names))
+
+inpBox.bind("<Return>", add_song)
 
 def add_album():
     # find album by name
@@ -133,12 +140,10 @@ def add_album():
     for track in tracks['items']:
         name = track['name']
         song_names.append(name)
+        
+    status_text.delete('1.0', '100.100')
+    status_text.insert('1.0', str(song_names))
 
-    status_text.config(text=str(song_names))
-
-
-btn_song = tkinter.Button(window, text="Add Song", command=add_song)
-btn_song.grid(column=0, row=2)
 
 btn_album = tkinter.Button(window, text="Add Album", command=add_album)
 btn_album.grid(column=0, row=3)
@@ -148,16 +153,39 @@ threads = []
 #os.path.normpath()
 #os.path.join()
 def done():
-    for song_name in song_names:
-        append_video_link(song_name)
+    print("Downloading")
+    if __name__ == '__main__':
+        popup = tkinter.Toplevel()
+        tkinter.Label(popup, text="Files being downloaded").grid(row=0, column=0)
 
-    browser.close()
+        progress = 0
+        progress_var = tkinter.DoubleVar()
+        progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100)
+        progress_bar.grid(row=1, column=0)  # .pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+        popup.pack_slaves()
 
-    for link, song_name in zip(links, song_names):
-        file_path, artist_name, album, song, year = get_song_info(song_name)
-        download_video_link(link, file_path, artist_name, album, song, year)
+        progress_step = float(100.0 / (len(song_names)*2))
 
-    status_text.config(text=f'Done!')
+        start = time.perf_counter()
+
+        for song_name in song_names:
+            popup.update()
+            append_video_link(song_name)
+            progress += progress_step
+            progress_var.set(progress)
+
+        browser.close()
+
+        for link, song_name in zip(links, song_names):
+            popup.update()
+            file_path, artist_name, album, song, year = get_song_info(song_name)
+            download_video_link(link, file_path, artist_name, album, song, year)
+            progress += progress_step
+            progress_var.set(progress)
+
+        status_text.insert('1.0', f'Done, this took {start} seconds\n')
+        popup.destroy()
+
 
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
 btn_done.grid(column=0, row=4)
