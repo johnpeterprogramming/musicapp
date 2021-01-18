@@ -48,8 +48,10 @@ sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #sp
 song_names = []
 links = []
 
+if not os.path.exists('Music'):
+    os.makedirs('Music')
+
 os.chdir('Music')
-home_path = os.getcwd()
 
 def append_video_link(name):
     status_text.config(text=f'Getting link for {name}')
