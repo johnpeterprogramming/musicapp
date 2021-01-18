@@ -150,41 +150,40 @@ btn_album.grid(column=0, row=3)
 
 threads = []
 
-#os.path.normpath()
-#os.path.join()
 def done():
     print("Downloading")
     if __name__ == '__main__':
-        popup = tkinter.Toplevel()
-        tkinter.Label(popup, text="Files being downloaded").grid(row=0, column=0)
+        if song_names:
+            popup = tkinter.Toplevel()
+            tkinter.Label(popup, text="Files being downloaded").grid(row=0, column=0)
 
-        progress = 0
-        progress_var = tkinter.DoubleVar()
-        progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100)
-        progress_bar.grid(row=1, column=0)  # .pack(fill=tk.X, expand=1, side=tk.BOTTOM)
-        popup.pack_slaves()
+            progress = 0
+            progress_var = tkinter.DoubleVar()
+            progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100)
+            progress_bar.grid(row=1, column=0)  # .pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+            popup.pack_slaves()
 
-        progress_step = float(100.0 / (len(song_names)*2))
+            progress_step = float(100.0 / (len(song_names)*2))
 
-        start = time.perf_counter()
+            start = time.perf_counter()
 
-        for song_name in song_names:
-            popup.update()
-            append_video_link(song_name)
-            progress += progress_step
-            progress_var.set(progress)
+            for song_name in song_names:
+                popup.update()
+                append_video_link(song_name)
+                progress += progress_step
+                progress_var.set(progress)
 
-        browser.close()
+            browser.close()
 
-        for link, song_name in zip(links, song_names):
-            popup.update()
-            file_path, artist_name, album, song, year = get_song_info(song_name)
-            download_video_link(link, file_path, artist_name, album, song, year)
-            progress += progress_step
-            progress_var.set(progress)
+            for link, song_name in zip(links, song_names):
+                popup.update()
+                file_path, artist_name, album, song, year = get_song_info(song_name)
+                download_video_link(link, file_path, artist_name, album, song, year)
+                progress += progress_step
+                progress_var.set(progress)
 
-        status_text.insert('1.0', f'Done, this took {start} seconds\n')
-        popup.destroy()
+            status_text.insert('1.0', f'Done, this took {start} seconds\n')
+            popup.destroy()
 
 
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
