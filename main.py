@@ -55,7 +55,7 @@ def append_video_link(name):
     status_text.config(text=f'Getting link for {name}')
 
     try:
-        link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
+        link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]
 
         browser.get(link)
 
@@ -104,9 +104,10 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
 
-    os.remove(os.path.join(location, stream.default_filename))
 
     audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
+
+    os.remove(os.path.join(location, stream.default_filename))
 
     status_text.config(text=f'Metadata for {song_name} added')
 
