@@ -14,7 +14,7 @@ import re # for punctuation filtering
 
 from pydub import AudioSegment
 
-#youtube's html is mostly rendered throught javascript so I cant use a simple get request i have to render it with selenium
+#youtube's html is mostly rendered through javascript so I cant use a simple get request i have to render it with selenium
 from selenium import webdriver
 
 #so i can enable headless
@@ -23,17 +23,17 @@ from selenium.webdriver.firefox.options import Options
 import tkinter
 
 window = tkinter.Tk()
-window.geometry("400x180")
+window.geometry("500x400")
 window.title("Music Downloader")
 
-lbl = tkinter.Label(window, text="Enter name of songs(listable) or album", font=("Arial Bold", 16))
-lbl.grid(column=0, row=0)
+caption = tkinter.Label(window, text="Add songs or album to be downloaded", font=("Arial Bold", 16))
+caption.grid(column=0, row=0)
 
-lbl1 = tkinter.Label(window, font=("Arial", 10))
-lbl1.grid(column=0, row=5)
+status_text = tkinter.Label(window, font=("Arial", 10))
+status_text.grid(column=0, row=5)
 
-txt = tkinter.Entry(window,width=30)
-txt.grid(column=0, row=1)
+inpBox = tkinter.Entry(window,width=30)
+inpBox.grid(column=0, row=1)
 
 options = Options()
 options.headless = True
@@ -52,17 +52,20 @@ os.chdir('Music')
 home_path = os.getcwd()
 
 def append_video_link(name):
-    lbl1.config(text=f'Getting link for {name}')
+    status_text.config(text=f'Getting link for {name}')
 
-    link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
+    try:
+        link = 'https://www.youtube.com/results?search_query=' + name.replace(' ', '+')
 
-    browser.get(link)
+        browser.get(link)
 
-    soup = BeautifulSoup(browser.page_source, features="lxml")
+        soup = BeautifulSoup(browser.page_source, features="lxml")
 
-    first_video_link = soup.find(id='video-title')
+        first_video_link = soup.find(id='video-title')
 
-    links.append('https://www.youtube.com' + first_video_link['href'])
+        links.append('https://www.youtube.com' + first_video_link['href'])
+    except:
+        print(f'{name} couldnt be found')
 
 def get_song_info(name):
     result = sp1.search(name)
@@ -94,43 +97,47 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
     filtered = yt.streams.filter(only_audio=True)
 
     stream = filtered[0]
-    lbl1.config(text='Starting Download')
+    status_text.config(text='Starting Download')
     stream.download(location)
-#    os.rename(os.path.join(location, song_name+'.mp4'), os.path.join(location, song_name+'.mp3'))
-    lbl1.config(text='Finished Download, adding metadata')
+
+    status_text.config(text='Finished Download, adding metadata')
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
 
+    os.remove(os.path.join(location, stream.default_filename))
+
     audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
 
-    lbl1.config(text=f'Metadata for {song_name} added')
+    status_text.config(text=f'Metadata for {song_name} added')
 
-def download_song():
-    song_name_name = txt.get()
-    song_names.append(song_name_name)
-    lbl1.config(text=str(song_names))
+def add_song():
+    inp_song = inpBox.get()
+    inpBox.delete(0, 'end')
+    song_names.append(inp_song)
+    status_text.config(text=str(song_names))
 
-btn_song = tkinter.Button(window, text="Download Song", command=download_song)
+def add_album():
+    # find album by name
+    album = inpBox.get()
+    inpBox.delete(0, 'end')
+    results = sp1.search(q="album:" + album, type="album")
+
+    # get the first album uri
+    album_id = results['albums']['items'][0]['uri']
+
+    # get album tracks
+    tracks = sp1.album_tracks(album_id)
+    for track in tracks['items']:
+        name = track['name']
+        song_names.append(name)
+
+    status_text.config(text=str(song_names))
+
+
+btn_song = tkinter.Button(window, text="Add Song", command=add_song)
 btn_song.grid(column=0, row=2)
 
-def download_album():
-    # find album by name
-    try:
-        album = txt.get()
-        results = sp1.search(q="album:" + album, type="album")
-
-        # get the first album uri
-        album_id = results['albums']['items'][0]['uri']
-
-        # get album tracks
-        tracks = sp1.album_tracks(album_id)
-        for track in tracks['items']:
-            name = track['name']
-            song_names.append(name)
-    except:
-        lbl1.config(text="We did not understand, Please try again")
-
-btn_album = tkinter.Button(window, text="Download Album", command=download_album)
+btn_album = tkinter.Button(window, text="Add Album", command=add_album)
 btn_album.grid(column=0, row=3)
 
 threads = []
@@ -138,31 +145,18 @@ threads = []
 #os.path.normpath()
 #os.path.join()
 def done():
-    lbl1.config(text="Downloading")
-    if __name__ == '__main__':
+    for song_name in song_names:
+        append_video_link(song_name)
 
-        start = time.perf_counter()
+    browser.close()
 
-        for song_name in song_names:
-            append_video_link(song_name)
+    for link, song_name in zip(links, song_names):
+        file_path, artist_name, album, song, year = get_song_info(song_name)
+        download_video_link(link, file_path, artist_name, album, song, year)
 
-        browser.close()
-
-        for link, song_name in zip(links, song_names):
-            file_path, artist_name, album, song, year = get_song_info(song_name)
-            download_video_link(link, file_path, artist_name, album, song, year)
-
-        end = time.perf_counter()
-
-        lbl1.config(text=f'Done, this took {end-start} seconds')
+    status_text.config(text=f'Done!')
 
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
 btn_done.grid(column=0, row=4)
 window.mainloop()
-'''
-    for song_name in song_names:
-        html = get_video_html(song_name)
-        thread = threading.Thread(target=download_video_link, args=(html,))
-        thread.start()
-'''
 
