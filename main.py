@@ -86,6 +86,8 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
 
+    os.remove(os.path.join(location, stream.default_filename))
+
     audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
 
     print(f'Metadata for {song_name} added')
@@ -139,10 +141,4 @@ if __name__ == '__main__':
     end = time.perf_counter()
 
     print(f'Done, this took {end-start} seconds')
-    '''
-    for song_name in song_names:
-        html = get_video_html(song_name)
-        thread = threading.Thread(target=download_video_link, args=(html,))
-        thread.start()
-    '''
 
