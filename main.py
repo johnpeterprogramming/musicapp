@@ -24,13 +24,16 @@ import tkinter
 from tkinter import ttk
 
 window = tkinter.Tk()
+
 window.geometry("600x600")
+
 window.title("Music Downloader")
 
 caption = tkinter.Label(window, text="Add songs or album to be downloaded", font=("Arial Bold", 16))
 caption.grid(column=0, row=0)
 
 status_text = tkinter.Text(window, font=("Arial", 10))
+
 status_text.grid(column=0, row=5)
 
 inpBox = tkinter.Entry(window,width=30)
@@ -54,6 +57,7 @@ home_path = os.getcwd()
 
 def append_video_link(name):
     status_text.insert('1.0', f'Getting link for {name}\n')
+
 
     try:
         link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]
@@ -101,7 +105,6 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     print('Starting Download')
     stream.download(location)
-#    os.rename(os.path.join(location, song_name+'.mp4'), os.path.join(location, song_name+'.mp3'))
     print('Finished Download, adding metadata')
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
@@ -135,8 +138,10 @@ def add_album():
     for track in tracks['items']:
         name = track['name']
         song_names.append(name)
+        
     status_text.delete('1.0', '100.100')
     status_text.insert('1.0', str(song_names))
+
 
 btn_album = tkinter.Button(window, text="Add Album", command=add_album)
 btn_album.grid(column=0, row=3)
@@ -178,6 +183,7 @@ def done():
 
         status_text.insert('1.0', f'Done, this took {start} seconds\n')
         popup.destroy()
+
 
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
 btn_done.grid(column=0, row=4)
