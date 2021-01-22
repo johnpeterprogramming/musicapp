@@ -1,4 +1,3 @@
-import threading
 #Spotify api
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -21,17 +20,11 @@ from selenium import webdriver
 #so i can enable headless
 from selenium.webdriver.firefox.options import Options
 
-import pygame
-
-import ntpath
-
 import tkinter
-from tkinter import filedialog
 from tkinter import ttk
 
-pygame.mixer.init()
-
 window = tkinter.Tk()
+<<<<<<< HEAD
 window.geometry("560x500")
 
 window.title("Music Downloader")
@@ -163,6 +156,24 @@ def connect():
     if success_connect == False:
         popup1 = tkinter.Toplevel()
         tkinter.Label(popup1, text="Unable to connect").grid(row=0, column=0)
+=======
+window.geometry("600x600")
+window.title("Music Downloader")
+
+caption = tkinter.Label(window, text="Add songs or album to be downloaded", font=("Arial Bold", 16))
+caption.grid(column=0, row=0)
+
+status_text = tkinter.Text(window, font=("Arial", 10))
+status_text.grid(column=0, row=5)
+
+inpBox = tkinter.Entry(window,width=30)
+inpBox.grid(column=0, row=1)
+
+options = Options()
+options.headless = True
+
+browser = webdriver.Firefox(options=options)
+>>>>>>> parent of dcff78c... Many Changes
 
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
@@ -172,7 +183,11 @@ sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #sp
 song_names = []
 links = []
 
+<<<<<<< HEAD
 
+=======
+os.chdir('Music')
+>>>>>>> parent of dcff78c... Many Changes
 home_path = os.getcwd()
 
 if not os.path.exists('Music'):
@@ -212,11 +227,15 @@ def get_song_info(name):
 
     album_name = re.sub(r'[^\w\s]', '', album_name) #removes all punctuation
     artist_name = re.sub(r'[^\w\s]', '', artist_name)
+<<<<<<< HEAD
 
 
     album_name = album_name.translate ({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
     artist_name = artist_name.translate ({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
 
+=======
+    
+>>>>>>> parent of dcff78c... Many Changes
     file_path = os.path.join(artist_name, album_name)
 
     if not os.path.exists(file_path):
@@ -243,7 +262,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.insert('1.0', f'{song_name} downloaded\n')
+    status_text.config(text=f'Metadata for {song_name} added')
 
 def add_song(event):
     inp_song = inpBox.get()
@@ -272,14 +291,14 @@ def add_album():
     status_text.delete('1.0', '100.100')
     status_text.insert('1.0', str(song_names))
 
-btn_album = tkinter.Button(frame, text="Add Album", command=add_album)
-btn_album.place(relx=0.4, rely=0.2, relwidth=0.2, relheight=0.05)
+btn_album = tkinter.Button(window, text="Add Album", command=add_album)
+btn_album.grid(column=0, row=3)
 
 threads = []
 
 #os.path.normpath()
 #os.path.join()
-def done_thread():
+def done():
     print("Downloading")
     if __name__ == '__main__':
         popup = tkinter.Toplevel()
@@ -314,11 +333,7 @@ def done_thread():
         status_text.insert('1.0', f'Done, this took {start} seconds\n')
         popup.destroy()
 
-def done():
-    thr = threading.Thread(target=done_thread, args=[])
-    thr.start()
-
-btn_done = tkinter.Button(frame, text="Start downloads", command=done)
-btn_done.place(relx=0.4, rely=0.3, relwidth=0.2, relheight=0.05)
-connect()
+btn_done = tkinter.Button(window, text="Start downloads", command=done)
+btn_done.grid(column=0, row=4)
 window.mainloop()
+
