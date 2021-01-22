@@ -27,15 +27,17 @@ import ntpath
 
 from mutagen.mp3 import MP3
 
-import tkinter
 from tkinter import filedialog
+import tkinter
 from tkinter import ttk
+
 #Initialising mixer
 pygame.mixer.init()
 
 #Define starting setting for window
+
 window = tkinter.Tk()
-window.geometry("560x500")
+window.geometry("600x600")
 window.title("Music Downloader")
 
 #Create frame for downloader portion
@@ -342,8 +344,14 @@ else:
 #Save the current working directory to variable
 home_path = os.getcwd()
 
+if not os.path.exists('Music'):
+    os.makedirs('Music')
+
+os.chdir('Music')
+
 def append_video_link(name):
     status_text.insert('1.0', f'Getting link for {name}\n')
+
 
     try:
         link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]
@@ -373,10 +381,7 @@ def get_song_info(name):
 
     album_name = re.sub(r'[^\w\s]', '', album_name) #removes all punctuation
     artist_name = re.sub(r'[^\w\s]', '', artist_name)
-
-    album_name = album_name.translate ({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
-    artist_name = artist_name.translate ({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
-
+    
     file_path = os.path.join(artist_name, album_name)
 
     if not os.path.exists(file_path):
@@ -394,7 +399,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     print('Starting Download')
     stream.download(location)
-#    os.rename(os.path.join(location, song_name+'.mp4'), os.path.join(location, song_name+'.mp3'))
+
     print('Finished Download, adding metadata')
 
     audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
@@ -403,7 +408,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.insert('1.0', f'{song_name} downloaded\n')
+    status_text.config(text=f'Metadata for {song_name} added')
 
 def add_song(event):
     inp_song = inpBox.get()
@@ -428,11 +433,12 @@ def add_album():
     for track in tracks['items']:
         name = track['name']
         song_names.append(name)
+
     status_text.delete('1.0', '100.100')
     status_text.insert('1.0', str(song_names))
 
-btn_album = tkinter.Button(frame, text="Add Album", command=add_album)
-btn_album.place(relx=0.4, rely=0.2, relwidth=0.2, relheight=0.05)
+btn_album = tkinter.Button(window, text="Add Album", command=add_album)
+btn_album.grid(column=0, row=3)
 
 threads = []
 
@@ -454,6 +460,7 @@ def done_thread():
 
         start = time.perf_counter()
 
+
         for song_name in song_names:
             popup.update()
             append_video_link(song_name)
@@ -472,14 +479,14 @@ def done_thread():
         status_text.insert('1.0', f'Done, this took {start} seconds\n')
         popup.destroy()
 
+
 #Start the downloads thread
 def done():
     #Set the threads target function
     thr = threading.Thread(target=done_thread, args=[])
     #Start the thread. Will self terminate once function is completed
     thr.start()
-
-btn_done = tkinter.Button(frame, text="Start downloads", command=done)
-btn_done.place(relx=0.4, rely=0.3, relwidth=0.2, relheight=0.05)
-connect()
+btn_done = tkinter.Button(window, text="Start downloads", command=done)
+btn_done.grid(column=0, row=4)
 window.mainloop()
+
