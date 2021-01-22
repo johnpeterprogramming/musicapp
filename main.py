@@ -438,7 +438,7 @@ def add_album():
     status_text.insert('1.0', str(song_names))
 
 btn_album = tkinter.Button(window, text="Add Album", command=add_album)
-btn_album.grid(column=0, row=3)
+btn_album.place(relwidth=0.2, relheight=0.05, rely=0.1, relx=0.4)
 
 threads = []
 
@@ -487,6 +487,6 @@ def done():
     #Start the thread. Will self terminate once function is completed
     thr.start()
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
-btn_done.grid(column=0, row=4)
+btn_done.place(relwidth=0.2, relheight=0.05, rely=0.175, relx=0.4)
 window.mainloop()
 
