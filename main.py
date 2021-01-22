@@ -112,7 +112,7 @@ def play_time(path = os.getcwd()):
 #add a single song to the playlist
 def add_song():
     #Store the file chosen in dialog box to variable
-    songdir = filedialog.askopenfilename(initialdir="Music", title="Choose a song", filetypes=(('mp3 files', "*.mp3"), ))
+    songdir = filedialog.askopenfilename(initialdir=os.getcwd, title="Choose a song", filetypes=(('mp3 files', "*.mp3"), ))
     #Remove path from file
     song = ntpath.basename(songdir)
     #Add to playlist
@@ -121,7 +121,7 @@ def add_song():
  #add multiple songs to playlist
 def add_multiple_songs():
     #Store files chosen in dialog box to a variable
-    songdirs = filedialog.askopenfilenames(initialdir="Music", title="Choose a song", filetypes=(('mp3 files', "*.mp3"),))
+    songdirs = filedialog.askopenfilenames(initialdir=os.getcwd(), title="Choose a song", filetypes=(('mp3 files', "*.mp3"),))
     #Loop through songs removing path and adding to playlist
     for songdir in songdirs:
         song = ntpath.basename(songdir)
@@ -262,11 +262,11 @@ stop_btn = tkinter.Button(framemp, text="Stop", command=stop)
 next_btn = tkinter.Button(framemp, text="Next", command=next_song)
 previous_btn = tkinter.Button(framemp, text="Previous", command=previous_song)
 
-play_btn.place(relx=0.2, rely=0.7, relwidth=0.1, relheight=0.1)
-pause_btn.place(relx=0.3, rely=0.7, relwidth=0.1, relheight=0.1)
-stop_btn.place(relx=0.4, rely=0.7, relwidth=0.1, relheight=0.1)
-next_btn.place(relx=0.6, rely=0.7, relwidth=0.1, relheight=0.1)
-previous_btn.place(relx=0.7, rely=0.7, relwidth=0.1, relheight=0.1)
+play_btn.place(relx=0.2, rely=0.65, relwidth=0.1, relheight=0.1)
+pause_btn.place(relx=0.3, rely=0.65, relwidth=0.1, relheight=0.1)
+stop_btn.place(relx=0.4, rely=0.65, relwidth=0.1, relheight=0.1)
+next_btn.place(relx=0.6, rely=0.65, relwidth=0.1, relheight=0.1)
+previous_btn.place(relx=0.7, rely=0.65, relwidth=0.1, relheight=0.1)
 
 #Define the menu bar
 menump = tkinter.Menu(window)
@@ -344,11 +344,6 @@ else:
 #Save the current working directory to variable
 home_path = os.getcwd()
 
-if not os.path.exists('Music'):
-    os.makedirs('Music')
-
-os.chdir('Music')
-
 def append_video_link(name):
     status_text.insert('1.0', f'Getting link for {name}\n')
 
@@ -408,7 +403,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.config(text=f'Metadata for {song_name} added')
+    status_text.insert('1.0', f'{song_name} downloaded\n')
 
 def add_song(event):
     inp_song = inpBox.get()
@@ -488,5 +483,6 @@ def done():
     thr.start()
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
 btn_done.place(relwidth=0.2, relheight=0.05, rely=0.175, relx=0.4)
+connect()
 window.mainloop()
 
