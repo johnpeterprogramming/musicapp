@@ -27,6 +27,7 @@ import ntpath
 
 from mutagen.mp3 import MP3
 
+from tkinter import messagebox
 from tkinter import filedialog
 import tkinter
 from tkinter import ttk
@@ -87,8 +88,9 @@ def play_time(path = os.getcwd()):
     current_time_synced = current_time + 1
     #Change slider and label behaviour based on current song state
     #Check if the song is completed and stop label from continueing count
-    if int(progress_slider.get()) == song_length:
+    if int(progress_slider.get() + 1) == int(song_length):
         duration_lbl.config(text=f'Time Elapsed: {converted_length_time} of {converted_length_time}  ')
+        next_song()
     #Ignore updating the slider and label while song is paused
     elif paused:
         pass
@@ -112,7 +114,7 @@ def play_time(path = os.getcwd()):
 #add a single song to the playlist
 def add_song():
     #Store the file chosen in dialog box to variable
-    songdir = filedialog.askopenfilename(initialdir="Music", title="Choose a song", filetypes=(('mp3 files', "*.mp3"), ))
+    songdir = filedialog.askopenfilename(initialdir=os.getcwd, title="Choose a song", filetypes=(('mp3 files', "*.mp3"), ))
     #Remove path from file
     song = ntpath.basename(songdir)
     #Add to playlist
@@ -121,7 +123,7 @@ def add_song():
  #add multiple songs to playlist
 def add_multiple_songs():
     #Store files chosen in dialog box to a variable
-    songdirs = filedialog.askopenfilenames(initialdir="Music", title="Choose a song", filetypes=(('mp3 files', "*.mp3"),))
+    songdirs = filedialog.askopenfilenames(initialdir=os.getcwd(), title="Choose a song", filetypes=(('mp3 files', "*.mp3"),))
     #Loop through songs removing path and adding to playlist
     for songdir in songdirs:
         song = ntpath.basename(songdir)
@@ -150,7 +152,6 @@ def play(path = os.getcwd()):
     #This code looks redundant, but it is required
     global stopped
     stopped =True
-    stopped = False
     #Retrieve the selected song
     song = song_box.get("active")
     name = song
@@ -159,6 +160,7 @@ def play(path = os.getcwd()):
         if name in files:
             song_dir = os.path.join(root, name)
     #Load the song and play it
+    stopped = False
     pygame.mixer.music.load(song_dir)
     pygame.mixer.music.play(loops=0)
     #Being updating UI elements
@@ -201,23 +203,30 @@ def pause(is_paused):
 
 #Select and play the next song
 def next_song():
+    global stopped
+    stopped = True
     #Reset slider and label
     progress_slider.config(value=0)
     duration_lbl.config(text='')
     #Get the current selection
     next_one = song_box.curselection()
     #Update to the next selection
-    next_one = next_one[0]+1
+    try:
+        next_one = next_one[0]+1
+    except:
+        next_one = 0
     #Clear the current selection
     song_box.selection_clear(0, 'end')
     #Update the selection on playlist
     song_box.activate(next_one)
     song_box.selection_set(next_one, last=None)
     #Play the newly selected song
-    play()
+    window.after(1000, play)
 
 #Select and play the previous song
 def previous_song():
+    global stopped
+    stopped = True
     #Reset slider and label
     progress_slider.config(value=0)
     duration_lbl.config(text='')
@@ -231,11 +240,13 @@ def previous_song():
     song_box.activate(previous_one)
     song_box.selection_set(previous_one, last=None)
     #Play the newly selected song
-    play()
+    window.after(1000, play)
 
 #Updates song position when slider is moved
 def slide(event, path=os.getcwd()):
     #Get the currently selected song
+    global stopped
+    stopped = True
     song = song_box.get("active")
     name = song
     #Get the currently selected song's directory
@@ -243,6 +254,7 @@ def slide(event, path=os.getcwd()):
         if name in files:
             song_dir = os.path.join(root, name)
     #Load and play from the postion of slider
+    stopped = False
     pygame.mixer.music.load(song_dir)
     pygame.mixer.music.play(loops=0, start= int(progress_slider.get()))
 
@@ -262,11 +274,11 @@ stop_btn = tkinter.Button(framemp, text="Stop", command=stop)
 next_btn = tkinter.Button(framemp, text="Next", command=next_song)
 previous_btn = tkinter.Button(framemp, text="Previous", command=previous_song)
 
-play_btn.place(relx=0.2, rely=0.7, relwidth=0.1, relheight=0.1)
-pause_btn.place(relx=0.3, rely=0.7, relwidth=0.1, relheight=0.1)
-stop_btn.place(relx=0.4, rely=0.7, relwidth=0.1, relheight=0.1)
-next_btn.place(relx=0.6, rely=0.7, relwidth=0.1, relheight=0.1)
-previous_btn.place(relx=0.7, rely=0.7, relwidth=0.1, relheight=0.1)
+play_btn.place(relx=0.2, rely=0.65, relwidth=0.1, relheight=0.1)
+pause_btn.place(relx=0.3, rely=0.65, relwidth=0.1, relheight=0.1)
+stop_btn.place(relx=0.4, rely=0.65, relwidth=0.1, relheight=0.1)
+next_btn.place(relx=0.6, rely=0.65, relwidth=0.1, relheight=0.1)
+previous_btn.place(relx=0.7, rely=0.65, relwidth=0.1, relheight=0.1)
 
 #Define the menu bar
 menump = tkinter.Menu(window)
@@ -329,7 +341,9 @@ client_credentials_manager = SpotifyClientCredentials(client_id=client_id, clien
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 
 #Initialise downloader variables
+global song_names
 song_names = []
+global links
 links = []
 
 #Make sure the Music folder exists
@@ -343,11 +357,6 @@ else:
 
 #Save the current working directory to variable
 home_path = os.getcwd()
-
-if not os.path.exists('Music'):
-    os.makedirs('Music')
-
-os.chdir('Music')
 
 def append_video_link(name):
     status_text.insert('1.0', f'Getting link for {name}\n')
@@ -408,7 +417,7 @@ def download_video_link(link, location, artist_name, album_name, song_name, rele
 
     os.remove(os.path.join(location, stream.default_filename))
 
-    status_text.config(text=f'Metadata for {song_name} added')
+    status_text.insert('1.0', f'{song_name} downloaded\n')
 
 def add_song(event):
     inp_song = inpBox.get()
@@ -442,9 +451,20 @@ btn_album.place(relwidth=0.2, relheight=0.05, rely=0.1, relx=0.4)
 
 threads = []
 
+def clear_list():
+    global song_names
+    song_names = []
+    status_text.delete('1.0', '100.100')
+    status_text.insert('1.0', str(song_names))
+
+btn_clear = tkinter.Button(window, text="Clear List", command=clear_list)
+btn_clear.place(relwidth=0.2, relheight=0.025, rely=0.525, relx=0.7)
+
 #os.path.normpath()
 #os.path.join()
 def done_thread():
+    global song_names
+    global links
     print("Downloading")
     if __name__ == '__main__':
         popup = tkinter.Toplevel()
@@ -467,7 +487,6 @@ def done_thread():
             progress += progress_step
             progress_var.set(progress)
 
-        browser.close()
 
         for link, song_name in zip(links, song_names):
             popup.update()
@@ -477,6 +496,8 @@ def done_thread():
             progress_var.set(progress)
 
         status_text.insert('1.0', f'Done, this took {start} seconds\n')
+        song_names = []
+        links = []
         popup.destroy()
 
 
@@ -486,7 +507,15 @@ def done():
     thr = threading.Thread(target=done_thread, args=[])
     #Start the thread. Will self terminate once function is completed
     thr.start()
+
+def on_closing():
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        browser.close()
+        window.destroy()
+
+window.protocol("WM_DELETE_WINDOW", on_closing)
+
 btn_done = tkinter.Button(window, text="Start downloads", command=done)
 btn_done.place(relwidth=0.2, relheight=0.05, rely=0.175, relx=0.4)
+connect()
 window.mainloop()
-
