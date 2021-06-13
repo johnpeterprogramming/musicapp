@@ -92,15 +92,17 @@ def append_video_link(name):
     soup = BeautifulSoup(browser.page_source, features="lxml")
 
     first_video_link = soup.find(id='video-title')
-
-    links.append('https://www.youtube.com' + first_video_link['href'])
-    print('link: https://www.youtube.com' + first_video_link['href'] + ' successfully added.')
+    if first_video_link:
+        links.append('https://www.youtube.com' + first_video_link['href'])
+        print('link: https://www.youtube.com' + first_video_link['href'] + ' successfully added.')
+    else:
+        print('coulndt find link')
 
 
 def get_song_info(name):
     result = sp1.search(name)
-    track = result['tracks']['items'][0]
-    if track:
+    if result['tracks']['items'][0]:
+        track = result['tracks']['items'][0]
         #assigning variables to replace special characters
         album_name = track['album']["name"]
 
