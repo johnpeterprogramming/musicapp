@@ -5,6 +5,8 @@ import time
 import os
 import requests
 
+
+
 home_path = os.path.abspath(os.path.dirname("__file__"))
 
 if not os.path.exists(os.path.join(home_path, 'Music')):
@@ -19,6 +21,7 @@ browser = webdriver.Firefox(options=options)
 
 song_name = input("Song name: ")
 # song_name = "eat that fetus"
+start = time.time()
 
 browser.get('https://www.mp3juices.cc/')
 
@@ -41,10 +44,13 @@ while True:
         download_button_button = download_button.find_element_by_link_text("Download")
         download_link = download_button_button.get_attribute('href')
         browser.close()
-        print("Found link, busying downloading")
+        print("Found link")
         break
     except:
         pass
 
+print("Busy downloading")
 song_link = requests.get(download_link, allow_redirects=True)
 open(song_name+".mp4", 'wb').write(song_link.content)
+print("Done")
+print(time.time()-start)
