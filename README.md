@@ -1,4 +1,4 @@
-# musicapp
+# musicapp :musical_note:
 Uses youtube to download songs and organise them
 
 Pip install all dependancies:
