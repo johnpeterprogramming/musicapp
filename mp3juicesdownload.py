@@ -4,30 +4,18 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 #used to get the first youtube video link from search result
 from bs4 import BeautifulSoup, element
-
 import time
-
-from pytube import YouTube
-
 import os
 import re # for punctuation filtering
 
-from pydub import AudioSegment
-
 #youtube's html is mostly rendered through javascript so I cant use a simple get request i have to render it with selenium
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 
-#so i can enable headless
-from selenium.webdriver.firefox.options import Options
-
-import pygame
-
-import ntpath
-
-from mutagen.mp3 import MP3
-
+from selenium.webdriver.firefox import options
 import tkinter
-
+import music_tag
+import requests
 
 #Define starting setting for window
 
@@ -64,12 +52,13 @@ if not os.path.exists('Music'):
 
 #Selenium browser
 
-options = Options()
-options.headless = True
+options = options.Options()
+#options.headless = True
 
-browser = webdriver.Firefox(options=options)
+browser = webdriver.Firefox(options=options, executable_path="/home/johna/coding/python/musicapp/geckodriver")
 
 #Initialise spotipy variables
+#REPLACE WITH .ENV LATER
 client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
 client_secret = 'd787a0f00e6849a6845384e9a467119b'
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
@@ -79,24 +68,7 @@ sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #sp
 song_names = []
 links = []
 
-
 os.chdir('Music')
-
-def append_video_link(name):
-    # status_text.insert('1.0', f'Getting link for {name}\n')
-
-    link = 'https://www.youtube.com/results?search_query=' + name + '+' + get_song_info(name)[1]#artist name
-
-    browser.get(link)
-
-    soup = BeautifulSoup(browser.page_source, features="lxml")
-
-    first_video_link = soup.find(id='video-title')
-    if first_video_link:
-        links.append('https://www.youtube.com' + first_video_link['href'])
-        print('link: https://www.youtube.com' + first_video_link['href'] + ' successfully added.')
-    else:
-        print('coulndt find link')
 
 
 def get_song_info(name):
@@ -124,35 +96,51 @@ def get_song_info(name):
     else:
         print(f'couldnt get song info of {name} from spotify api')
 
+def get_song_link(song_name):
+    browser.get('https://www.mp3juices.cc/')
+    search_bar = browser.find_element(By.NAME, "query")
 
-def download_video_link(link, location, artist_name, album_name, song_name, release_date):
-    yt = YouTube(link)
+    search_bar.send_keys(song_name)
 
-    filtered = yt.streams.filter(only_audio=True)
+    search_button = browser.find_element(By.ID, "button")
+    search_button.click()
 
-    stream = filtered[0]
+    start = time.time()
+    while True:
+        try:
+            download_button = browser.find_element(By.CLASS_NAME, "download")
+            break
+        except:
+            time.sleep(0.5)
 
-    print('Starting Download')
-    print(location)
-    stream.download(location)
-    print(os.path.join(location, stream.default_filename))
+        if start - time.time() > 10:
+            print("Tried for 10 seconds and now results were found")
+            return None
 
-    print('Finished Download, adding metadata')
-
-    audio = AudioSegment.from_file(os.path.join(location, stream.default_filename))
-
-    audio.export(os.path.join(location, song_name.replace(' ', '_'))+'.mp3', format='mp3', tags={'albumartist':artist_name,'album':album_name, 'artist':artist_name, 'title':song_name, 'year':release_date})
-
-    os.remove(os.path.join(location, stream.default_filename))
-
-    # status_text.config(text=f'Metadata for {song_name} added')
+    download_button.click()
+        
+    start = time.time()
+    while True:
+        try:
+            download_button_button = download_button.find_element(By.XPATH, "/html/body/div/div[2]/div[3]/div[2]/div[2]/a[1]")
+            download_link = download_button_button.get_attribute('href')
+            print(f"Found link: {download_link}")
+            return download_link
+        except:
+            if time.time() - start > 10:
+                print("Couldn't find link for", song_name)
+                return False
+            time.sleep(0.5)
+            print("sleeping looking for download button")
 
 def add_song(event):
     inp_song = inpBox.get()
     inpBox.delete(0, 'end')
+
     song_names.append(inp_song)
-    # status_text.delete('1.0', '100.100')
-    # status_text.insert('1.0', str(song_names))
+
+    status_text.delete('1.0', '100.100')
+    status_text.insert('1.0', str(song_names))
 
 inpBox.bind("<Return>", add_song)
 
@@ -171,25 +159,37 @@ def add_album():
         name = track['name']
         song_names.append(name)
 
-    # status_text.delete('1.0', '100.100')
-    # status_text.insert('1.0', str(song_names))
+    status_text.delete('1.0', '100.100')
+    status_text.insert('1.0', str(song_names))
 
-btn_album = tkinter.Button(window, text="Add Album", command=add_album)
-btn_album.place(relwidth=0.2, relheight=0.05, rely=0.1, relx=0.4)
+#btn_album = tkinter.Button(window, text="Add Album", command=add_album)
+#btn_album.place(relwidth=0.2, relheight=0.05, rely=0.1, relx=0.4)
+
+def download_audio_link(link, file_path, artist_name, album, song, year):
+    os.makedirs(link)
+    r = requests.get(link)
+    song_location = os.path.join(file_path, song) 
+    with open(song_location, 'wb') as f:
+        f.write(r.content)
+    print("song has been downloaded, busy adding metadata")
+    f = music_tag.load_file(song_location)
+    f['album'] = album
+    f['artist'] = artist_name
+    f['year'] = year
+    f['tracktitle'] = song
+    f.save()
+    print("metadata had been added ")
 
 
 def start_downloads():
     if len(song_names) > 0:
         start = time.perf_counter()
 
-
         for song_name in song_names:
-            append_video_link(song_name)
-
-        for link, song_name in zip(links, song_names):
             file_path, artist_name, album, song, year = get_song_info(song_name)
-            download_video_link(link, file_path, artist_name, album, song, year)
-
+            link = get_song_link(song_name)
+            if link:
+                download_audio_link(link, file_path, artist_name, album, song, year)
 
         status_text.insert('1.0', f'Done, this took {time.perf_counter() - start} seconds\n')
         song_names.clear()
