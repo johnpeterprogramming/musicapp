@@ -166,7 +166,7 @@ def add_album():
 #btn_album.place(relwidth=0.2, relheight=0.05, rely=0.1, relx=0.4)
 
 def download_audio_link(link, file_path, artist_name, album, song, year):
-    os.makedirs(link)
+    os.makedirs(file_path, exist_ok=True)
     r = requests.get(link)
     song_location = os.path.join(file_path, song) 
     with open(song_location, 'wb') as f:
