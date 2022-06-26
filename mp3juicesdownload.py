@@ -53,7 +53,7 @@ if not os.path.exists('Music'):
 #Selenium browser
 
 options = options.Options()
-#options.headless = True
+options.headless = True
 
 browser = webdriver.Firefox(options=options, executable_path="/home/johna/coding/python/musicapp/geckodriver")
 
