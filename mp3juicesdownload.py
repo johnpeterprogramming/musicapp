@@ -17,6 +17,9 @@ import tkinter
 import music_tag
 import requests
 
+from dotenv import load_dotenv
+load_dotenv()
+
 #Define starting setting for window
 
 window = tkinter.Tk()
@@ -55,12 +58,12 @@ if not os.path.exists('Music'):
 options = options.Options()
 options.headless = True
 
+#Replace with geckodriver exe
 browser = webdriver.Firefox(options=options, executable_path="/home/johna/coding/python/musicapp/geckodriver")
 
 #Initialise spotipy variables
-#REPLACE WITH .ENV LATER
-client_id = 'e28b2678f2ce4edc9f3e1b2b52588c80'
-client_secret = 'd787a0f00e6849a6845384e9a467119b'
+client_id = os.getenv("CLIENT_ID")
+client_secret = os.getenv("CLIENT_SECRET")
 client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp1 = spotipy.Spotify(client_credentials_manager=client_credentials_manager) #spotify object to access API
 
@@ -73,7 +76,7 @@ os.chdir('Music')
 
 def get_song_info(name):
     result = sp1.search(name)
-    if result['tracks']['items'][0]:
+    if result['tracks']['items']:
         track = result['tracks']['items'][0]
         #assigning variables to replace special characters
         album_name = track['album']["name"]
@@ -95,6 +98,7 @@ def get_song_info(name):
         return file_path, artist_name, album_name, song_name, release_date
     else:
         print(f'couldnt get song info of {name} from spotify api')
+    return None, None, None, None, None
 
 def get_song_link(song_name):
     browser.get('https://www.mp3juices.cc/')
@@ -187,9 +191,12 @@ def start_downloads():
 
         for song_name in song_names:
             file_path, artist_name, album, song, year = get_song_info(song_name)
-            link = get_song_link(song_name)
-            if link:
-                download_audio_link(link, file_path, artist_name, album, song, year)
+            if song_name:
+                link = get_song_link(song_name)
+                if link:
+                    download_audio_link(link, file_path, artist_name, album, song, year)
+            else:
+                print("No Song found")
 
         status_text.insert('1.0', f'Done, this took {time.perf_counter() - start} seconds\n')
         song_names.clear()
